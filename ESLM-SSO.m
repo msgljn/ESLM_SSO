@@ -1,19 +1,19 @@
 function [L,t]=ESLM_SSO(label_x,label_x_t,unlabel_x)
 %% The input paramters of the alogrithm
-L=label_x;                 %已标记数据
-U=unlabel_x;               %未标记数据
-t=label_x_t;              %已标记数据的类别
-count=1;                   %迭代次数
+L=label_x;                 % labeled data
+U=unlabel_x;               % unlabeled data
+t=label_x_t;               % class of labeled data
+count=1;                   % iteration number
 %% Parameters in the iterative proces
 record_size_U=[];
 record_size_U(count)=size(U,1);
 %% Iterative self-labeling process
 while 1
     fprintf('------------------------------Iterations of ESLM-SSO:%g----------------------------\n',count)
-    %% 初始化U
     newU=U;        
-    %%
+    %% employ the newly proposed ECSSO
     PseudoLabels_KNN=ECSSO(L,t,newU,3);
+    %% employ the newly proposed HSSSO
     [particles,localBest,localBestParticles,globalBest,globalBestParticle]=HSSSO(L,t,newU,PseudoLabels_KNN);
     TempPos1=find(globalBestParticle==1);
     TempPos2=find(globalBestParticle==0);
@@ -21,19 +21,16 @@ while 1
     classifyU=newU(TempPos1,:);
     Pre=PseudoLabels_KNN(TempPos1);
     %Pre=KNNC(L,t,classifyU,3);
-    %%
-    fprintf('--------------高置信度无标记样本数目:%g\n', size(classifyU,1))
-    fprintf('--------------U集样本数%g,训练集总样本为%g\n',size(U,1),size(L,1));
-    %% 更新L和U
+    %% Update L and U
     L=[L;classifyU];
     t=[t;Pre];
     U=newU(TempPos2,:);
     count=count+1;
-    %% 判断停止条件
-    record_size_U(count)=size(U,1);
-    if (count>3 && isequal(record_size_U(count),record_size_U(count-1),record_size_U(count-2)))  ||  size(U,1)==0
+    %% stop condition
+    if size(U,1)==0
         break;
     end
 end
 end
 %%
+
